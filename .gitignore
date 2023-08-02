@@ -2,6 +2,7 @@
 dist
 dist-server
 images
+assets
 
 # Logs
 logs
