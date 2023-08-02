@@ -1,25 +1,35 @@
 import * as express from 'express';
 
-import { UserRole } from '@fabiant1498/llovizna-blog';
-
 import { upload } from '../config/multerConfig';
 
-import {
-  createUser,
-  getUser,
-  getUsers,
-  updateUser,
-  deleteUser,
-} from './../controllers/userController';
+import { createUser, updateUserProfile } from './../controllers/userController';
 
 import { verifyToken, verifyRole } from './../middleware/authMiddleware';
+import { removeBodyProps } from './../middleware/removePropertyMiddleware';
+
+import { UserRole } from '@fabiant1498/llovizna-blog';
+
+const writeGroup: UserRole[] = ['superadmin', 'admin'];
 
 const router = express.Router();
 
-router.use(verifyToken, verifyRole(['superadmin', 'admin']));
+router
+  .route('/')
+  .post(
+    verifyToken,
+    verifyRole(writeGroup),
+    upload.single('picture'),
+    removeBodyProps(['pictureCategory']),
+    createUser
+  );
 
-router.route('/').post(upload.single('picture'), createUser).get(getUsers);
-
-router.route('/:id').get(getUser).patch(updateUser).delete(deleteUser);
+router
+  .route('/profile')
+  .put(
+    verifyToken,
+    upload.single('picture'),
+    removeBodyProps(['pictureCategory']),
+    updateUserProfile
+  );
 
 export default router;

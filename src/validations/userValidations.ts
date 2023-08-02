@@ -10,7 +10,7 @@ const getUserSchema = Joi.object({
   id: Joi.string().hex().length(24).required(),
 });
 
-const createUserSchema = Joi.object({
+const updateCreateUserProps = {
   firstName: Joi.string().max(50).required(),
   lastName: Joi.string().max(50).required(),
   email: Joi.string().email().required(),
@@ -26,12 +26,22 @@ const createUserSchema = Joi.object({
     .required(),
   picturePath: Joi.string().length(250).optional(),
   username: Joi.string().max(50).required(),
+};
+
+const createUserSchema = Joi.object({
+  ...updateCreateUserProps,
   role: Joi.string()
     .valid(...(['admin', 'superadmin', 'editor', 'eventManager'] as UserRole[]))
     .required(),
 });
 
+const udpateUserSchema = Joi.object({
+  ...updateCreateUserProps,
+  role: Joi.forbidden(),
+});
+
 const validateGetUser = validator(getUserSchema);
 const validateCreateUser = validator<User>(createUserSchema);
+const validateUpdateUser = validator<User>(udpateUserSchema);
 
-export { validateGetUser, validateCreateUser };
+export { validateGetUser, validateCreateUser, validateUpdateUser };

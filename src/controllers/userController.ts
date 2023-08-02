@@ -1,6 +1,8 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
+import * as path from 'path';
+import * as fs from 'fs';
 
 import { UserRole, User } from '@fabiant1498/llovizna-blog';
 
@@ -10,7 +12,11 @@ import { uploadDirUrl } from '../config/multerConfig';
 
 import UserModel from '@models/user';
 
-import { validateGetUser, validateCreateUser } from '@validations/userValidations';
+import {
+  validateGetUser,
+  validateCreateUser,
+  validateUpdateUser,
+} from '@validations/userValidations';
 
 // const formatFriends = (arr: Models.User[]) =>
 //   arr.map(({ _id, firstName, lastName, occupation, location, picturePath }: Models.User) => {
@@ -24,7 +30,7 @@ import { validateGetUser, validateCreateUser } from '@validations/userValidation
 //     };
 //   });
 
-const createUser = catchAsync(async (req: Request, res: Response) => {
+const createUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Get user input
     const data: User = req.body ?? {};
@@ -34,9 +40,9 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
         req.user.role === 'admin' &&
         (['superadmin', 'admin'] as UserRole[]).includes(data.role)
       ) {
-        return res.status(400).json(
+        return res.status(403).json(
           createResponse(false, null, {
-            code: 400,
+            code: 403,
             message: "You don't have allowed to create another admin users",
           })
         );
@@ -45,13 +51,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
       const { error, value } = validateCreateUser(data);
 
       if (error) {
-        console.log(error.details.map((errDetail) => errDetail.type));
-        return res.status(400).json(
-          createResponse(false, null, {
-            code: 400,
-            message: error.details.map((err) => err.message),
-          })
-        );
+        return next(error);
       }
 
       const file = req.file;
@@ -77,12 +77,74 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
       res.status(201).json(createResponse<User>(true, user, null));
     }
   } catch (err: any) {
-    return res.status(400).json(
-      createResponse(false, null, {
-        code: 400,
-        message: err.message,
-      })
-    );
+    if (err.name === 'MongoServerError' && err.code === 11000) {
+      const file = req.file;
+      if (file) {
+        const imagePath = path.join(__dirname, `../../${uploadDirUrl.profile}`, file.filename);
+        fs.unlinkSync(imagePath);
+        console.log('Imagen eliminada debido a un error de duplicación de índice.');
+      }
+    }
+
+    next(err);
+  }
+});
+
+const updateUserProfile = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Get user input
+    const data: User = req.body ?? {};
+
+    if (req.user) {
+      const { error, value } = validateUpdateUser(data);
+
+      if (error) {
+        return next(error);
+      }
+
+      const file = req.file;
+      let fileUrl: string = '';
+
+      if (file) {
+        // The URL of the new profile picture
+        fileUrl = `${uploadDirUrl.profile}/${file.filename}`;
+
+        if (req.user.picturePath && req.user.picturePath !== '') {
+          // Delete picture profile if there's already exists one
+          const currentFilename = __filename;
+          const currentDirPath = path.dirname(currentFilename);
+          const imagePath = path.join(currentDirPath, '../../', req.user.picturePath);
+
+          if (fs.existsSync(imagePath)) {
+            // Eliminar la imagen
+            fs.unlinkSync(imagePath);
+            console.log('Imagen eliminada correctamente');
+          } else {
+            console.log('La imagen no existe');
+          }
+        }
+      }
+
+      //Encrypt user password
+      const encryptedPassword = await bcrypt.hash(data.password, 10);
+
+      const user: User = {
+        ...data,
+        password: encryptedPassword,
+      };
+
+      if (fileUrl !== '') {
+        user.picturePath = fileUrl;
+      }
+
+      let id = new Types.ObjectId(req.user._id);
+
+      const updatedPost = await UserModel.findByIdAndUpdate(id, user, { new: true });
+
+      res.status(201).json(createResponse<User>(true, user, null));
+    }
+  } catch (err: any) {
+    next(err);
   }
 });
 
@@ -200,4 +262,4 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {});
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {});
 
-export { createUser, getUsers, getUser, updateUser, deleteUser };
+export { createUser, updateUserProfile };
