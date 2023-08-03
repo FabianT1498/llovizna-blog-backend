@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
+import { Types } from 'mongoose';
+
 import { UserRole } from '@fabiant1498/llovizna-blog';
 
 import { User } from '@fabiant1498/llovizna-blog';
 import UserModel from '@models/user';
 
 import { createResponse } from '@app/utils/createResponse';
-import catchAsync from './../utils/catchAsync';
+import catchAsync from '../utils/catchAsync';
 
 export const verifyToken = catchAsync(async (req: Request, res: Response, next: any) => {
   const tokenKey: string | undefined = process.env.TOKEN_KEY;
@@ -22,11 +24,22 @@ export const verifyToken = catchAsync(async (req: Request, res: Response, next: 
     const decoded = jwt.verify(token, key);
 
     if (decoded && typeof decoded === 'object') {
-      const user: User | null = await UserModel.findById(decoded.userId);
+      const userDoc = await UserModel.findById(decoded.userId);
 
-      if (!user) {
+      if (!userDoc) {
         return res.status(400).send("Authenticated user doesn't exist");
       }
+
+      const user: User = {
+        _id: userDoc.id,
+        firstName: userDoc.firstName,
+        lastName: userDoc.lastName,
+        email: userDoc.email,
+        role: userDoc.role,
+        picturePath: userDoc.picturePath,
+        username: userDoc.username,
+        password: userDoc.password,
+      };
 
       req.user = user;
     }

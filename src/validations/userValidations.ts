@@ -35,13 +35,21 @@ const createUserSchema = Joi.object({
     .required(),
 });
 
-const udpateUserSchema = Joi.object({
+const updateUserSchema = Joi.object({
   ...updateCreateUserProps,
   role: Joi.forbidden(),
 });
 
+const updateUserRoleSchema = Joi.object({
+  role: Joi.string()
+    .valid(...(['admin', 'superadmin', 'editor', 'eventManager'] as UserRole[]))
+    .required(),
+  id: Joi.string().hex().length(24).required(),
+});
+
 const validateGetUser = validator(getUserSchema);
 const validateCreateUser = validator<User>(createUserSchema);
-const validateUpdateUser = validator<User>(udpateUserSchema);
+const validateUpdateUser = validator<User>(updateUserSchema);
+const validateUpdateUserRole = validator(updateUserRoleSchema);
 
-export { validateGetUser, validateCreateUser, validateUpdateUser };
+export { validateGetUser, validateCreateUser, validateUpdateUser, validateUpdateUserRole };

@@ -2,8 +2,9 @@ import * as express from 'express';
 import * as dotenv from 'dotenv';
 
 // MIDDLEWARES
-import { configureGlobalMiddleware } from './middleware/configureGlobalMiddleware';
-import { errorHandlerMiddleware } from './middleware/errorHandlerMiddleware';
+import { configureGlobal } from './middleware/configureGlobal';
+import { errorHandler } from './middleware/errorHandler';
+import { notFound } from './middleware/notFound';
 
 dotenv.config();
 
@@ -23,14 +24,16 @@ const app = express();
     await connect();
 
     // GLOBAL MIDDLEWARES
-    configureGlobalMiddleware(app);
+    configureGlobal(app);
 
-    // 3) ROUTES
+    // ROUTES
     app.use('/auth', authRouter);
     app.use('/api/v1/users', userRouter);
     // app.use('/api/v1/posts', postRouter);
 
-    errorHandlerMiddleware(app);
+    // ERROR HANDLER MIDDLEWARES
+    errorHandler(app);
+    notFound(app);
   } catch (err) {
     console.error('Error connecting to the database:', err);
     process.exit(1);

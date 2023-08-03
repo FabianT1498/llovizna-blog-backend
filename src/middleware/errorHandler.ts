@@ -45,7 +45,7 @@ const handleValidationError = (err: any, res: express.Response) => {
   );
 };
 
-export const errorHandlerMiddleware = (app: express.Application) => {
+export const errorHandler = (app: express.Application) => {
   // Error handling
   app.use(function (
     err: any,
@@ -60,9 +60,10 @@ export const errorHandlerMiddleware = (app: express.Application) => {
       return handleValidationError(err, res);
     } else if (err.name === 'MongoServerError' && err.code === 11000) {
       return handleDuplicateKeyError(err, res);
+    } else if (err.code === 404) {
+      res.status(404).json({ error: 'Not found' });
     } else {
       // Otros errores
-      console.log(err.name);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   });

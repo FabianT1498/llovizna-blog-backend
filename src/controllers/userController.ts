@@ -16,6 +16,7 @@ import {
   validateGetUser,
   validateCreateUser,
   validateUpdateUser,
+  validateUpdateUserRole,
 } from '@validations/userValidations';
 
 // const formatFriends = (arr: Models.User[]) =>
@@ -90,6 +91,65 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
   }
 });
 
+const updateUserRole = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const params = req.params ?? {};
+    const data = req.body ?? {};
+
+    if (req.user) {
+      const { error } = validateUpdateUserRole({ ...data, ...params });
+
+      if (error) {
+        return next(error);
+      }
+
+      const user = await UserModel.findById(params.id);
+
+      if (!user) {
+        return res.status(404).json(
+          createResponse(false, null, {
+            code: 404,
+            message: "User doesn't exist",
+          })
+        );
+      }
+
+      if (user.id === req.user._id) {
+        return res.status(403).json(
+          createResponse(false, null, {
+            code: 403,
+            message: 'You cannot update your own user role',
+          })
+        );
+      }
+
+      if (
+        req.user.role === 'admin' &&
+        (['superadmin', 'admin'] as UserRole[]).includes(data.role)
+      ) {
+        return res.status(403).json(
+          createResponse(false, null, {
+            code: 403,
+            message: "You don't have allowed to create another admin users",
+          })
+        );
+      }
+
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        params.id,
+        { role: data.role },
+        { new: true }
+      );
+
+      console.log(updatedUser);
+
+      res.status(201).json(createResponse(true, updatedUser, null));
+    }
+  } catch (err: any) {
+    next(err);
+  }
+});
+
 const updateUserProfile = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Get user input
@@ -137,9 +197,7 @@ const updateUserProfile = catchAsync(async (req: Request, res: Response, next: N
         user.picturePath = fileUrl;
       }
 
-      let id = new Types.ObjectId(req.user._id);
-
-      const updatedPost = await UserModel.findByIdAndUpdate(id, user, { new: true });
+      await UserModel.findByIdAndUpdate(req.user._id, user, { new: true });
 
       res.status(201).json(createResponse<User>(true, user, null));
     }
@@ -262,4 +320,4 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {});
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {});
 
-export { createUser, updateUserProfile };
+export { createUser, updateUserProfile, updateUserRole };

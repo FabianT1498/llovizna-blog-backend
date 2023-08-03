@@ -2,10 +2,10 @@ import * as express from 'express';
 
 import { upload } from '../config/multerConfig';
 
-import { createUser, updateUserProfile } from './../controllers/userController';
+import { createUser, updateUserProfile, updateUserRole } from './../controllers/userController';
 
-import { verifyToken, verifyRole } from './../middleware/authMiddleware';
-import { removeBodyProps } from './../middleware/removePropertyMiddleware';
+import { verifyToken, verifyRole } from '../middleware/auth';
+import { removeBodyProps } from '../middleware/removeProperty';
 
 import { UserRole } from '@fabiant1498/llovizna-blog';
 
@@ -31,5 +31,7 @@ router
     removeBodyProps(['pictureCategory']),
     updateUserProfile
   );
+
+router.route('/:id/role').patch(verifyToken, verifyRole(writeGroup), updateUserRole);
 
 export default router;
