@@ -39,6 +39,7 @@ export const verifyToken = catchAsync(async (req: Request, res: Response, next: 
         picturePath: userDoc.picturePath,
         username: userDoc.username,
         password: userDoc.password,
+        status: userDoc.status,
       };
 
       req.user = user;

@@ -2,7 +2,12 @@ import * as express from 'express';
 
 import { upload } from '../config/multerConfig';
 
-import { createUser, updateUserProfile, updateUserRole } from './../controllers/userController';
+import {
+  createUser,
+  updateUserProfile,
+  updateUserRole,
+  getUsers,
+} from './../controllers/userController';
 
 import { verifyToken, verifyRole } from '../middleware/auth';
 import { removeBodyProps } from '../middleware/removeProperty';
@@ -21,7 +26,8 @@ router
     upload.single('picture'),
     removeBodyProps(['pictureCategory']),
     createUser
-  );
+  )
+  .get(verifyToken, verifyRole(writeGroup), getUsers);
 
 router
   .route('/profile')

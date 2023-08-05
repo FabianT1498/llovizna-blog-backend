@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
 import UserSchema from './typings/userSchema.interface';
 
-import { UserRole } from '@fabiant1498/llovizna-blog';
+import { UserRole, UserStatus } from '@fabiant1498/llovizna-blog';
 
 const userSchema = new Schema<UserSchema>(
   {
@@ -22,6 +22,11 @@ const userSchema = new Schema<UserSchema>(
       type: String,
       required: true,
       enum: ['admin', 'superadmin', 'editor', 'eventManager'] as UserRole[],
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ['active', 'inactive'] as UserStatus[],
     },
     createdAt: {
       type: Schema.Types.Date,

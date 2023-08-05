@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { Types } from 'mongoose';
+import { FilterQuery } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import { UserRole, User } from '@fabiant1498/llovizna-blog';
-
+import { UserRole, User, UserStatus } from '@fabiant1498/llovizna-blog';
+import { paginate } from '@utils/paginate';
 import { createResponse } from '@utils/createResponse';
 import catchAsync from './../utils/catchAsync';
 import { uploadDirUrl } from '../config/multerConfig';
@@ -314,10 +314,95 @@ const getUser = catchAsync(async (req: Request, res: Response) => {
 //   res.status(200).json(response);
 // };
 
-const getUsers = catchAsync(async (req: Request, res: Response) => {});
+const getUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const params = req.query;
+
+    const statuses: UserStatus[] = ['active', 'inactive'] as UserStatus[];
+    const adminAllowedRoles: UserRole[] = ['eventManager', 'editor'] as UserRole[];
+    const superadminAllowedRoles: UserRole[] = [
+      'eventManager',
+      'editor',
+      'admin',
+      'superadmin',
+    ] as UserRole[];
+
+    if (req.user) {
+      let { page, pageSize } = params;
+
+      const authRole: UserRole = req.user.role;
+
+      const statusIsString = params?.status && typeof params.status === 'string';
+      const status: UserStatus | 'ALL' = statusIsString
+        ? statuses.includes(params.status as UserStatus)
+          ? (params.status as UserStatus)
+          : 'ALL'
+        : 'ALL';
+
+      const roleIsString = params?.role && typeof params.role === 'string';
+      const role: UserRole | 'ALL' = roleIsString
+        ? authRole === 'admin' && adminAllowedRoles.includes(params.role as UserRole)
+          ? (params.role as UserRole)
+          : authRole === 'superadmin' && superadminAllowedRoles.includes(params.role as UserRole)
+          ? (params.role as UserRole)
+          : 'ALL'
+        : 'ALL';
+
+      const username: string =
+        params?.username && typeof params.username === 'string' ? params.username : '';
+      const fullName: string =
+        params?.fullName && typeof params.fullName === 'string' ? params.fullName : '';
+
+      const userQuery: FilterQuery<typeof UserModel> = {};
+
+      if (status !== 'ALL') {
+        userQuery.status = status;
+      }
+
+      if (role === 'ALL') {
+        if (authRole === 'admin') {
+          userQuery.role = { $in: ['eventManager', 'editor'] as UserRole[] };
+        }
+      } else {
+        userQuery.role = role;
+      }
+
+      if (username !== '') {
+        userQuery.username = { $regex: username, $options: 'i' };
+      }
+
+      if (fullName !== '') {
+        const fullNameArr = fullName.split(' ');
+        const firstName = fullNameArr[0];
+        const lastName = fullNameArr[1];
+
+        userQuery.firstName = { $regex: firstName, $options: 'i' };
+
+        if (lastName !== undefined && lastName !== '') {
+          userQuery.lastName = { $regex: lastName, $options: 'i' };
+        }
+      }
+
+      userQuery._id = { $ne: req.user._id };
+
+      let query = UserModel.find(userQuery).sort({ createdAt: -1 });
+
+      let pageValidated: string | number = page && typeof page === 'string' ? page : 1;
+      let pageSizeValidated: string | number =
+        pageSize && typeof pageSize === 'string' ? pageSize : 10;
+
+      let result = await paginate(query, pageValidated, pageSizeValidated);
+
+      res.status(201).json(createResponse(true, result, null));
+    }
+  } catch (err: any) {
+    console.log(err);
+    return next(err);
+  }
+});
 
 const updateUser = catchAsync(async (req: Request, res: Response) => {});
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {});
 
-export { createUser, updateUserProfile, updateUserRole };
+export { createUser, updateUserProfile, updateUserRole, getUsers };

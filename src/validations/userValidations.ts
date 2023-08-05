@@ -2,7 +2,7 @@ import * as Joi from 'joi';
 
 import { validator } from './validator';
 
-import { User, UserRole } from '@fabiant1498/llovizna-blog';
+import { User, UserRole, UserStatus } from '@fabiant1498/llovizna-blog';
 
 import { escapeSpecialCharacters } from '@utils/stringUtils';
 
