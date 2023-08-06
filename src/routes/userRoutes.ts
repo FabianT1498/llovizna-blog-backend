@@ -19,28 +19,24 @@ const writeGroup: UserRole[] = ['superadmin', 'admin'];
 
 const router = express.Router();
 
+router.use(verifyToken);
+
 router
   .route('/')
   .post(
-    verifyToken,
     verifyRole(writeGroup),
     upload.single('picture'),
     removeBodyProps(['pictureCategory']),
     createUser
   )
-  .get(verifyToken, verifyRole(writeGroup), getUsers);
+  .get(verifyRole(writeGroup), getUsers);
 
 router
   .route('/profile')
-  .put(
-    verifyToken,
-    upload.single('picture'),
-    removeBodyProps(['pictureCategory']),
-    updateUserProfile
-  );
+  .put(upload.single('picture'), removeBodyProps(['pictureCategory']), updateUserProfile);
 
-router.route('/:id/status').patch(verifyToken, verifyRole(writeGroup), updateUserStatus);
+router.route('/:id/status').patch(verifyRole(writeGroup), updateUserStatus);
 
-router.route('/:id/role').patch(verifyToken, verifyRole(writeGroup), updateUserRole);
+router.route('/:id/role').patch(verifyRole(writeGroup), updateUserRole);
 
 export default router;

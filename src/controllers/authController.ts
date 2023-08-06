@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 
@@ -7,6 +7,8 @@ import UserModel from './../models/user';
 import { User } from '@fabiant1498/llovizna-blog';
 
 import { validateSignUp, validateLogin } from '@validations/authValidations';
+
+import { createResponse } from '@utils/createResponse';
 
 // const register = catchAsync(async (req: Request, res: Response) => {
 //   // Our register logic starts here
@@ -59,7 +61,7 @@ import { validateSignUp, validateLogin } from '@validations/authValidations';
 //   }
 // });
 
-const login = catchAsync(async (req: Request, res: Response) => {
+const login = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   // Our login logic starts here
   try {
     const data: User = req.body ?? {};
@@ -68,7 +70,7 @@ const login = catchAsync(async (req: Request, res: Response) => {
 
     // Get user input
     if (error) {
-      return res.status(400).send(error.details);
+      next(error);
     }
 
     // Validate if user exist in our database
@@ -76,7 +78,26 @@ const login = catchAsync(async (req: Request, res: Response) => {
     const tokenKey: string | undefined = process.env.TOKEN_KEY;
     const key: string = tokenKey || 'default';
 
-    if (user && (await bcrypt.compare(data.password, user.password))) {
+    if (!user) {
+      return res.status(400).json(
+        createResponse(false, null, {
+          code: 400,
+          message: 'Invalid credentials',
+          fields: { email: 'This email does not correspond to any user' },
+        })
+      );
+    }
+
+    if (user.status === 'inactive') {
+      return res.status(403).json(
+        createResponse(false, null, {
+          code: 403,
+          message: "You can't do any action because your user is inactive",
+        })
+      );
+    }
+
+    if (await bcrypt.compare(data.password, user.password)) {
       // Create token
       const token = jwt.sign({ userId: user._id, email: data.email.toLowerCase() }, key, {
         expiresIn: '2h',
@@ -86,11 +107,18 @@ const login = catchAsync(async (req: Request, res: Response) => {
       user.token = token;
 
       // user
-      return res.status(200).json(user);
+      return res.status(200).json(createResponse(true, user, null));
+    } else {
+      return res.status(400).json(
+        createResponse(false, null, {
+          code: 400,
+          message: 'Invalid credentials',
+          fields: { password: 'The password does not match' },
+        })
+      );
     }
-    res.status(400).send('Invalid Credentials');
   } catch (err) {
-    console.log(err);
+    next(err);
   }
   // Our register logic ends here
 });
