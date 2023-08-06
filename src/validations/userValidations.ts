@@ -47,9 +47,23 @@ const updateUserRoleSchema = Joi.object({
   id: Joi.string().hex().length(24).required(),
 });
 
+const updateUserStatusSchema = Joi.object({
+  status: Joi.string()
+    .valid(...(['active', 'inactive'] as UserStatus[]))
+    .required(),
+  id: Joi.string().hex().length(24).required(),
+});
+
 const validateGetUser = validator(getUserSchema);
 const validateCreateUser = validator<User>(createUserSchema);
 const validateUpdateUser = validator<User>(updateUserSchema);
 const validateUpdateUserRole = validator(updateUserRoleSchema);
+const validateUpdateUserStatus = validator(updateUserStatusSchema);
 
-export { validateGetUser, validateCreateUser, validateUpdateUser, validateUpdateUserRole };
+export {
+  validateGetUser,
+  validateCreateUser,
+  validateUpdateUser,
+  validateUpdateUserRole,
+  validateUpdateUserStatus,
+};

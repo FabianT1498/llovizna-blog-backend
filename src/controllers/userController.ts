@@ -17,6 +17,7 @@ import {
   validateCreateUser,
   validateUpdateUser,
   validateUpdateUserRole,
+  validateUpdateUserStatus,
 } from '@validations/userValidations';
 
 // const formatFriends = (arr: Models.User[]) =>
@@ -44,7 +45,7 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
         return res.status(403).json(
           createResponse(false, null, {
             code: 403,
-            message: "You don't have allowed to create another admin users",
+            message: 'You are not allowed to create another admin users',
           })
         );
       }
@@ -130,7 +131,7 @@ const updateUserRole = catchAsync(async (req: Request, res: Response, next: Next
         return res.status(403).json(
           createResponse(false, null, {
             code: 403,
-            message: "You don't have allowed to create another admin users",
+            message: 'You are not allowed to create another admin users',
           })
         );
       }
@@ -138,6 +139,67 @@ const updateUserRole = catchAsync(async (req: Request, res: Response, next: Next
       const updatedUser = await UserModel.findByIdAndUpdate(
         params.id,
         { role: data.role },
+        { new: true }
+      );
+
+      console.log(updatedUser);
+
+      res.status(201).json(createResponse(true, updatedUser, null));
+    }
+  } catch (err: any) {
+    next(err);
+  }
+});
+
+const updateUserStatus = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const params = req.params ?? {};
+    const data = req.body ?? {};
+
+    if (req.user) {
+      const { error } = validateUpdateUserStatus({ ...params, ...data });
+
+      if (error) {
+        return next(error);
+      }
+
+      const user = await UserModel.findById(params.id);
+
+      if (!user) {
+        return res.status(404).json(
+          createResponse(false, null, {
+            code: 404,
+            message: "User doesn't exist",
+          })
+        );
+      }
+
+      if (user.id === req.user._id) {
+        return res.status(403).json(
+          createResponse(false, null, {
+            code: 403,
+            message: 'You cannot update your own status',
+          })
+        );
+      }
+
+      if (
+        req.user.role === 'admin' &&
+        (['superadmin', 'admin'] as UserRole[]).includes(user.role)
+      ) {
+        return res.status(403).json(
+          createResponse(false, null, {
+            code: 403,
+            message: 'You are not allowed to update the status of another admin.',
+          })
+        );
+      }
+
+      const newStatus: UserStatus = data.status as UserStatus;
+
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        params.id,
+        { status: newStatus },
         { new: true }
       );
 
@@ -405,4 +467,4 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {});
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {});
 
-export { createUser, updateUserProfile, updateUserRole, getUsers };
+export { createUser, updateUserProfile, updateUserRole, getUsers, updateUserStatus };

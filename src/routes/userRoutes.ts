@@ -7,6 +7,7 @@ import {
   updateUserProfile,
   updateUserRole,
   getUsers,
+  updateUserStatus,
 } from './../controllers/userController';
 
 import { verifyToken, verifyRole } from '../middleware/auth';
@@ -37,6 +38,8 @@ router
     removeBodyProps(['pictureCategory']),
     updateUserProfile
   );
+
+router.route('/:id/status').patch(verifyToken, verifyRole(writeGroup), updateUserStatus);
 
 router.route('/:id/role').patch(verifyToken, verifyRole(writeGroup), updateUserRole);
 

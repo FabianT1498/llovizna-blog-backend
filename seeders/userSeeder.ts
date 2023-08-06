@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcryptjs';
 
-import { User, UserRole } from '@fabiant1498/llovizna-blog';
+import { User, UserRole, UserStatus } from '@fabiant1498/llovizna-blog';
 import UserModel from '@models/user';
 
 const seedUsers = async function () {
@@ -24,6 +24,7 @@ const seedUsers = async function () {
         role: userRoles[Math.floor(Math.random() * userRoles.length)],
         createdAt: new Date(),
         updatedAt: new Date(),
+        status: 'active',
       };
       users.push(user);
     }
