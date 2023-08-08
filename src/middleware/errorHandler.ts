@@ -1,5 +1,6 @@
 import * as express from 'express';
 import * as multer from 'multer';
+import * as jwt from 'jsonwebtoken';
 
 import { createResponse } from '@app/utils/createResponse';
 
@@ -84,9 +85,29 @@ export const errorHandler = (app: express.Application) => {
       return handleDuplicateKeyError(err, res);
     } else if (err.code === 404) {
       res.status(404).json({ error: 'Not found' });
+    } else if (err instanceof jwt.TokenExpiredError) {
+      // Manejar token expirado
+      return res.status(401).json(
+        createResponse(false, null, {
+          code: 401,
+          message: 'Token is expired',
+        })
+      );
+    } else if (err instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json(
+        createResponse(false, null, {
+          code: 401,
+          message: 'Token is invalid or bad formatted',
+        })
+      );
     } else {
       // Otros errores
-      res.status(500).json({ error: 'Internal Server Error' });
+      return res.status(500).json(
+        createResponse(false, null, {
+          code: 500,
+          message: err.message,
+        })
+      );
     }
   });
 };

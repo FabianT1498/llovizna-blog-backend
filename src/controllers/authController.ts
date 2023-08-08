@@ -4,9 +4,14 @@ import * as jwt from 'jsonwebtoken';
 
 import catchAsync from './../utils/catchAsync';
 import UserModel from './../models/user';
+import TokenModel from './../models/token';
 import { User } from '@fabiant1498/llovizna-blog';
 
-import { validateForgotPassword, validateLogin } from '@validations/authValidations';
+import {
+  validateForgotPassword,
+  validateLogin,
+  validateResetPassword,
+} from '@validations/authValidations';
 
 import { createResponse } from '@utils/createResponse';
 import { send } from './../config/nodemailer';
@@ -82,7 +87,7 @@ const forgotPassword = catchAsync(async (req: Request, res: Response, next: Next
 
     // Get user input
     if (error) {
-      next(error);
+      return next(error);
     }
 
     // Validate if user exist in our database
@@ -110,24 +115,38 @@ const forgotPassword = catchAsync(async (req: Request, res: Response, next: Next
     const tokenKey: string | undefined = process.env.TOKEN_KEY;
     const key: string = tokenKey + user.password;
 
+    const clientUrl: string | undefined = process.env.CLIENT_URL;
+
     // Create token
     const token = jwt.sign({ userId: user._id, email: data.email.toLowerCase() }, key, {
       expiresIn: '15m',
     });
 
-    const link = `http://localhost:3000/reset-password/${user.id}/${token}`;
+    let tokenDoc = await TokenModel.findOne({ userId: user._id });
+    if (tokenDoc) await TokenModel.deleteOne();
+
+    await new TokenModel({
+      userId: user._id,
+      token,
+      createdAt: Date.now(),
+    }).save();
+
+    const link = `${clientUrl}/reset-password?token=${token}&id=${user.id}`;
 
     const from: string | undefined = process.env.NODEMAILER_AUTH_USER;
+
+    const htmlContent = `
+      <h1>¡Hi ${
+        user.firstName + ' ' + user.lastName
+      }!</h1><p>You requested to reset your password, Please click the link below to reset </p><a href="${link}">Reset password</a>`;
 
     const mailData = {
       from,
       to: user.email,
       subject: 'Password reset',
-      text: `The password reset link for La llovizna runners blog is the following, ${link} 
-        This will be valid only for 15 minutes`,
+      html: htmlContent,
     };
     const responseMailer = await send(mailData);
-    console.log(responseMailer);
 
     return res
       .status(200)
@@ -139,14 +158,84 @@ const forgotPassword = catchAsync(async (req: Request, res: Response, next: Next
         )
       );
   } catch (err: any) {
-    return res.status(500).json(
-      createResponse(false, null, {
-        code: 500,
-        message: err.message,
-      })
-    );
+    next(err);
   }
   // Our register logic ends here
 });
 
-export { login, forgotPassword };
+const resetPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = req.body ?? {};
+
+    const { error } = validateResetPassword(data);
+
+    // Get user input
+    if (error) {
+      return next(error);
+    }
+
+    // Validate if user exist in our database
+    const user = await UserModel.findOne({ _id: data.userId });
+
+    if (!user) {
+      return res.status(400).json(
+        createResponse(false, null, {
+          code: 400,
+          message: 'Invalid credentials',
+          fields: { userId: 'This user Id does not correspond to any user' },
+        })
+      );
+    }
+
+    if (user.status === 'inactive') {
+      return res.status(403).json(
+        createResponse(false, null, {
+          code: 403,
+          message: "You can't do any action because your user is inactive",
+        })
+      );
+    }
+
+    let passwordResetToken = await TokenModel.findOne({ userId: user._id });
+    if (!passwordResetToken) {
+      throw new jwt.TokenExpiredError('Invalid or expired password reset token', new Date());
+    }
+
+    const tokenKey: string | undefined = process.env.TOKEN_KEY;
+    const key: string = tokenKey + user.password || 'default';
+
+    const decoded = jwt.verify(data.token, key);
+
+    if (decoded && typeof decoded === 'object') {
+      const encryptedPassword = await bcrypt.hash(data.password, 10);
+
+      await UserModel.findByIdAndUpdate(data.userId, { password: encryptedPassword });
+
+      const from: string | undefined = process.env.NODEMAILER_AUTH_USER;
+
+      const htmlContent = `
+      <h1>¡Hi ${
+        user.firstName + ' ' + user.lastName
+      }!</h1><p>Your password has been changed successfully</p>`;
+
+      const mailData = {
+        from,
+        to: user.email,
+        subject: 'Password changed successfully',
+        html: htmlContent,
+      };
+      await send(mailData);
+
+      await passwordResetToken.deleteOne();
+
+      return res
+        .status(200)
+        .json(createResponse(true, { message: 'Password has been changed sucessfully' }, null));
+    }
+  } catch (err: any) {
+    next(err);
+  }
+  // Our register logic ends here
+});
+
+export { login, forgotPassword, resetPassword };
