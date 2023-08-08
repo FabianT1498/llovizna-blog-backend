@@ -70,6 +70,7 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
         ...data,
         picturePath: fileUrl,
         password: encryptedPassword,
+        status: 'active'
       };
 
       const newUser = new UserModel(user);

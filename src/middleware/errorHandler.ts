@@ -45,6 +45,24 @@ const handleValidationError = (err: any, res: express.Response) => {
   );
 };
 
+const handleValidationErrorMongoose = (err: any, res: express.Response) => {
+  const errorMessages: Record<string, string[]> = {};
+
+  for (let field in err.errors) {
+    errorMessages[field] = err.errors[field].message;
+  }
+
+  let code = 400;
+
+  return res.status(code).json(
+    createResponse(false, null, {
+      code,
+      message: '',
+      fields: errorMessages,
+    })
+  );
+};
+
 export const errorHandler = (app: express.Application) => {
   // Error handling
   app.use(function (
@@ -57,7 +75,11 @@ export const errorHandler = (app: express.Application) => {
       // Manejo de errores de Multer
       res.status(400).json({ error: err.message });
     } else if (err.name === 'ValidationError') {
-      return handleValidationError(err, res);
+      if (err.isJoi) {
+        return handleValidationError(err, res);
+      }
+
+      return handleValidationErrorMongoose(err, res);
     } else if (err.name === 'MongoServerError' && err.code === 11000) {
       return handleDuplicateKeyError(err, res);
     } else if (err.code === 404) {

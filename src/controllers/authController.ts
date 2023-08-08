@@ -6,60 +6,10 @@ import catchAsync from './../utils/catchAsync';
 import UserModel from './../models/user';
 import { User } from '@fabiant1498/llovizna-blog';
 
-import { validateSignUp, validateLogin } from '@validations/authValidations';
+import { validateForgotPassword, validateLogin } from '@validations/authValidations';
 
 import { createResponse } from '@utils/createResponse';
-
-// const register = catchAsync(async (req: Request, res: Response) => {
-//   // Our register logic starts here
-//   try {
-//     // Get user input
-//     const data: User = req.body ?? {};
-
-//     const { error, value } = validateSignUp(data);
-
-//     // Validate user input
-//     if (error) {
-//       return res.status(400).send(error.details);
-//     }
-
-//     // check if user already exist
-//     // Validate if user exist in our database
-//     const oldUser = await UserModel.findOne({ email: data.email });
-
-//     if (oldUser) {
-//       return res.status(409).send('User Already Exist. Please Login');
-//     }
-
-//     //Encrypt user password
-//     const encryptedPassword = await bcrypt.hash(data.password, 10);
-
-//     // Create user in our database
-//     const user = await UserModel.create({
-//       ...data,
-//       email: data.email.toLowerCase(),
-//       password: encryptedPassword,
-//     });
-
-//     const tokenKey: string | undefined = process.env.TOKEN_KEY;
-//     const key: string = tokenKey || 'default';
-
-//     // Create token
-//     const token = jwt.sign({ userId: user._id, email: data.email.toLowerCase() }, key, {
-//       algorithm: 'HS256',
-//       expiresIn: '2h',
-//     });
-
-//     // save user token
-//     user.token = token;
-
-//     // return new user
-//     res.status(201).json(user);
-//   } catch (err: any) {
-//     console.log(err);
-//     res.status(500).json({ error: err.message });
-//   }
-// });
+import { send } from './../config/nodemailer';
 
 const login = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   // Our login logic starts here
@@ -70,7 +20,7 @@ const login = catchAsync(async (req: Request, res: Response, next: NextFunction)
 
     // Get user input
     if (error) {
-      next(error);
+      return next(error);
     }
 
     // Validate if user exist in our database
@@ -123,4 +73,80 @@ const login = catchAsync(async (req: Request, res: Response, next: NextFunction)
   // Our register logic ends here
 });
 
-export { login };
+const forgotPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  // Our login logic starts here
+  try {
+    const data = req.body ?? {};
+
+    const { error } = validateForgotPassword(data);
+
+    // Get user input
+    if (error) {
+      next(error);
+    }
+
+    // Validate if user exist in our database
+    const user = await UserModel.findOne({ email: data.email.toLowerCase() });
+
+    if (!user) {
+      return res.status(400).json(
+        createResponse(false, null, {
+          code: 400,
+          message: 'Invalid credentials',
+          fields: { email: 'This email does not correspond to any user' },
+        })
+      );
+    }
+
+    if (user.status === 'inactive') {
+      return res.status(403).json(
+        createResponse(false, null, {
+          code: 403,
+          message: "You can't do any action because your user is inactive",
+        })
+      );
+    }
+
+    const tokenKey: string | undefined = process.env.TOKEN_KEY;
+    const key: string = tokenKey + user.password;
+
+    // Create token
+    const token = jwt.sign({ userId: user._id, email: data.email.toLowerCase() }, key, {
+      expiresIn: '15m',
+    });
+
+    const link = `http://localhost:3000/reset-password/${user.id}/${token}`;
+
+    const from: string | undefined = process.env.NODEMAILER_AUTH_USER;
+
+    const mailData = {
+      from,
+      to: user.email,
+      subject: 'Password reset',
+      text: `The password reset link for La llovizna runners blog is the following, ${link} 
+        This will be valid only for 15 minutes`,
+    };
+    const responseMailer = await send(mailData);
+    console.log(responseMailer);
+
+    return res
+      .status(200)
+      .json(
+        createResponse(
+          true,
+          { message: 'Link has been sent to your email, please check your inbox.' },
+          null
+        )
+      );
+  } catch (err: any) {
+    return res.status(500).json(
+      createResponse(false, null, {
+        code: 500,
+        message: err.message,
+      })
+    );
+  }
+  // Our register logic ends here
+});
+
+export { login, forgotPassword };

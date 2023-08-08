@@ -45,6 +45,7 @@ export const verifyToken = catchAsync(async (req: Request, res: Response, next: 
       req.user = user;
     }
   } catch (err) {
+    console.log(err);
     return res.status(401).send('Invalid Token');
   }
   return next();
