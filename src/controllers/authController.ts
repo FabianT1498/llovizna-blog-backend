@@ -238,4 +238,24 @@ const resetPassword = catchAsync(async (req: Request, res: Response, next: NextF
   // Our register logic ends here
 });
 
-export { login, forgotPassword, resetPassword };
+const validateResetToken = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = req.params ?? {};
+
+    let passwordResetToken = await TokenModel.findOne({ token: data?.token });
+    if (!passwordResetToken) {
+      return res.status(403).json(
+        createResponse(false, null, {
+          code: 403,
+          message: 'Token is expired or invalid, please request a password reset again',
+        })
+      );
+    }
+
+    return res.status(200).json(createResponse(true, { message: 'Token is valid' }, null));
+  } catch (err: any) {
+    next(err);
+  }
+});
+
+export { login, forgotPassword, resetPassword, validateResetToken };

@@ -28,6 +28,11 @@ const resetPasswordSchema = Joi.object({
     })
     .required(),
   token: Joi.string().required(),
+  passwordConfirmation: Joi.any()
+    .valid(Joi.ref('password'))
+    .required()
+    .label('Confirm password')
+    .messages({ 'any.only': 'Confirm password does not match' }),
 });
 
 const validateForgotPassword = validator<User>(forgotPasswordSchema);
