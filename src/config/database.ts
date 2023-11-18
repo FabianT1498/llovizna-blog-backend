@@ -1,16 +1,21 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const { DATABASE_URL } = process.env;
 
-const connect = async () => {
+const connect = () => {
   // Connecting to the database
-  try{
-    await mongoose.connect(DATABASE_URL || "")
-    console.log("Successfully connected to database");
-  } catch(err){
-    console.log("database connection failed. exiting now...");
-    throw err
-  }
+  return new Promise((resolve, reject) => {
+    mongoose
+      .connect(DATABASE_URL || '')
+      .then(() => {
+        console.log('Successfully connected to database');
+        resolve('Database connected');
+      })
+      .catch((err) => {
+        console.log('database connection failed. exiting now...');
+        reject(err);
+      });
+  });
 };
 
 export default connect;

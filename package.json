@@ -10,12 +10,12 @@
     "watch-ts": "tsc -w",
     "build": "tsc",
     "seed": "ts-node -r tsconfig-paths/register seeders/seed.ts",
-    "test": "jest"
+    "test": "jest ./tests"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@fabiant1498/llovizna-blog": "^1.2.3",
+    "@fabiant1498/llovizna-blog": "^1.2.7",
     "@types/bcryptjs": "^2.4.2",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
@@ -26,6 +26,7 @@
     "helmet": "^6.1.5",
     "joi": "^17.9.2",
     "jsonwebtoken": "^9.0.0",
+    "mongodb-memory-server": "^9.0.1",
     "mongoose": "^7.0.3",
     "morgan": "^1.10.0",
     "multer": "^1.4.4-lts.1",
@@ -44,6 +45,7 @@
     "@types/morgan": "^1.9.4",
     "@types/node": "^18.15.10",
     "@types/nodemailer": "^6.4.9",
+    "@types/supertest": "^2.0.16",
     "concurrently": "^7.6.0",
     "jest": "^29.6.0",
     "prettier": "^2.8.8",

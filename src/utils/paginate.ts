@@ -2,7 +2,7 @@ import { Query } from 'mongoose';
 
 import PaginationResult from './typings/paginate.interface';
 
-const getPaginateData = async <T>(
+export const getPaginateData = async <T>(
   page: number,
   pageSize: number,
   query: Query<T[], T>,
@@ -27,12 +27,12 @@ const getPaginateData = async <T>(
   };
 };
 
-export async function paginate<T>(
+export const paginate = async <T>(
   query: Query<T[], T>,
   page: number | string = 1,
   pageSize: number | string = 10
-): Promise<PaginationResult<T>> {
-  let pageNumber: number = typeof page === 'string' ? parseInt(page) : page >= 1 ? page : 1;
+): Promise<PaginationResult<T>> => {
+  let pageNumber: number = typeof page === 'string' ? parseInt(page) : page > 0 ? page : 1;
 
   let pageSizeNumber: number =
     typeof pageSize === 'string' ? parseInt(pageSize) : pageSize > 0 ? pageSize : 10;
@@ -48,4 +48,4 @@ export async function paginate<T>(
   }
 
   return result;
-}
+};

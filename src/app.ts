@@ -8,9 +8,6 @@ import { notFound } from './middleware/notFound';
 
 dotenv.config();
 
-// DATABASE
-import connect from './config/database';
-
 // ROUTES
 import authRouter from './routes/authRoutes';
 import userRouter from './routes/userRoutes';
@@ -18,26 +15,16 @@ import userRouter from './routes/userRoutes';
 
 const app = express();
 
-(async () => {
-  try {
-    // DATABASE SETUP
-    await connect();
+// GLOBAL MIDDLEWARES
+configureGlobal(app);
 
-    // GLOBAL MIDDLEWARES
-    configureGlobal(app);
+// ROUTES
+app.use('/auth', authRouter);
+app.use('/api/v1/users', userRouter);
+// app.use('/api/v1/posts', postRouter);
 
-    // ROUTES
-    app.use('/auth', authRouter);
-    app.use('/api/v1/users', userRouter);
-    // app.use('/api/v1/posts', postRouter);
-
-    // ERROR HANDLER MIDDLEWARES
-    errorHandler(app);
-    notFound(app);
-  } catch (err) {
-    console.error('Error connecting to the database:', err);
-    process.exit(1);
-  }
-})();
+// ERROR HANDLER MIDDLEWARES
+errorHandler(app);
+notFound(app);
 
 export { app };
