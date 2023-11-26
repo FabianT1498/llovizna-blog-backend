@@ -1,12 +1,12 @@
 import { ServerResponse, ErrorResponse } from '@fabiant1498/llovizna-blog';
 
 const createResponse = <T>(
-  success: boolean,
+  code: number,
   data: T | null,
   error: ErrorResponse | null
 ): ServerResponse<T> => {
   const response: ServerResponse<T> = {
-    success,
+    code,
     data,
     error,
   };

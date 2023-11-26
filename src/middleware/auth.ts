@@ -53,10 +53,11 @@ export const verifyToken = catchAsync(async (req: Request, res: Response, next: 
 
 export const verifyRole =
   (allowedRoles: UserRole[]) => (req: Request, res: Response, next: any) => {
+    let code = 403;
+
     if (!req.user) {
-      return res.status(403).json(
-        createResponse(false, null, {
-          code: 403,
+      return res.status(code).json(
+        createResponse(code, null, {
           message: 'User is not authenticated',
         })
       );
@@ -65,9 +66,8 @@ export const verifyRole =
     let userRole: UserRole = req.user.role;
 
     if (!allowedRoles.includes(userRole)) {
-      return res.status(403).json(
-        createResponse(false, null, {
-          code: 403,
+      return res.status(code).json(
+        createResponse(code, null, {
           message: 'Access not allowed',
         })
       );

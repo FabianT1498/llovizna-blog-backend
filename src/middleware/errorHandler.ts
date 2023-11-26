@@ -6,15 +6,14 @@ import { createResponse } from '@app/utils/createResponse';
 
 const handleDuplicateKeyError = (err: any, res: express.Response) => {
   const fields = Object.keys(err.keyValue);
-  let fieldsMessages: Record<string, string | string[]> = {};
+  let fieldsMessages: Record<string, string> = {};
   fields.forEach((field: string) => {
     fieldsMessages[field] = `${field} already exists`;
   });
   const code = 409;
 
-  return res.status(409).json(
-    createResponse(false, null, {
-      code,
+  return res.status(code).json(
+    createResponse(code, null, {
       message: '',
       fields: fieldsMessages,
     })
@@ -22,24 +21,20 @@ const handleDuplicateKeyError = (err: any, res: express.Response) => {
 };
 
 const handleValidationError = (err: any, res: express.Response) => {
-  let fields = err.details.map((el: any) => el.path.join(''));
-  let fieldsMessages: Record<string, string[]> = {};
+  let fieldsMessages: Record<string, string> = {};
 
   err.details.forEach((el: any) => {
     let field = el.path.join('');
 
     if (fieldsMessages[field] === undefined) {
-      fieldsMessages[field] = [el.message];
-    } else if (Array.isArray(fieldsMessages[field])) {
-      fieldsMessages[field].push(el.message);
+      fieldsMessages[field] = el.message;
     }
   });
 
   let code = 400;
 
   return res.status(code).json(
-    createResponse(false, null, {
-      code,
+    createResponse(code, null, {
       message: '',
       fields: fieldsMessages,
     })
@@ -47,7 +42,7 @@ const handleValidationError = (err: any, res: express.Response) => {
 };
 
 const handleValidationErrorMongoose = (err: any, res: express.Response) => {
-  const errorMessages: Record<string, string[]> = {};
+  const errorMessages: Record<string, string> = {};
 
   for (let field in err.errors) {
     errorMessages[field] = err.errors[field].message;
@@ -56,8 +51,7 @@ const handleValidationErrorMongoose = (err: any, res: express.Response) => {
   let code = 400;
 
   return res.status(code).json(
-    createResponse(false, null, {
-      code,
+    createResponse(code, null, {
       message: '',
       fields: errorMessages,
     })
@@ -72,9 +66,11 @@ export const errorHandler = (app: express.Application) => {
     res: express.Response,
     next: express.NextFunction
   ) {
+    let code = 400;
+
     if (err instanceof multer.MulterError) {
       // Manejo de errores de Multer
-      res.status(400).json({ error: err.message });
+      res.status(code).json({ error: err.message });
     } else if (err.name === 'ValidationError') {
       if (err.isJoi) {
         return handleValidationError(err, res);
@@ -87,24 +83,24 @@ export const errorHandler = (app: express.Application) => {
       res.status(404).json({ error: 'Not found' });
     } else if (err instanceof jwt.TokenExpiredError) {
       // Manejar token expirado
-      return res.status(401).json(
-        createResponse(false, null, {
-          code: 401,
+      code = 401;
+      return res.status(code).json(
+        createResponse(code, null, {
           message: 'Token is expired',
         })
       );
     } else if (err instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json(
-        createResponse(false, null, {
-          code: 401,
+      code = 401;
+      return res.status(code).json(
+        createResponse(code, null, {
           message: 'Token is invalid or bad formatted',
         })
       );
     } else {
+      code = 500;
       // Otros errores
-      return res.status(500).json(
-        createResponse(false, null, {
-          code: 500,
+      return res.status(code).json(
+        createResponse(code, null, {
           message: err.message,
         })
       );

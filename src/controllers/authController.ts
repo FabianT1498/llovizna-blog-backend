@@ -18,6 +18,8 @@ import { send } from './../config/nodemailer';
 
 const login = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   // Our login logic starts here
+  let code = 200;
+
   try {
     const data: User = req.body ?? {};
 
@@ -34,9 +36,9 @@ const login = catchAsync(async (req: Request, res: Response, next: NextFunction)
     const key: string = tokenKey || 'default';
 
     if (!user) {
-      return res.status(400).json(
-        createResponse(false, null, {
-          code: 400,
+      code = 400;
+      return res.status(code).json(
+        createResponse(code, null, {
           message: 'Invalid credentials',
           fields: { email: 'This email does not correspond to any user' },
         })
@@ -44,9 +46,9 @@ const login = catchAsync(async (req: Request, res: Response, next: NextFunction)
     }
 
     if (user.status === 'inactive') {
-      return res.status(403).json(
-        createResponse(false, null, {
-          code: 403,
+      code = 403;
+      return res.status(code).json(
+        createResponse(code, null, {
           message: "You can't do any action because your user is inactive",
         })
       );
@@ -62,11 +64,11 @@ const login = catchAsync(async (req: Request, res: Response, next: NextFunction)
       user.token = token;
 
       // user
-      return res.status(200).json(createResponse(true, user, null));
+      return res.status(code).json(createResponse(code, user, null));
     } else {
-      return res.status(400).json(
-        createResponse(false, null, {
-          code: 400,
+      code = 400;
+      return res.status(code).json(
+        createResponse(code, null, {
           message: 'Invalid credentials',
           fields: { password: 'The password does not match' },
         })
@@ -80,6 +82,7 @@ const login = catchAsync(async (req: Request, res: Response, next: NextFunction)
 
 const forgotPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   // Our login logic starts here
+  let code = 200;
   try {
     const data = req.body ?? {};
 
@@ -94,9 +97,9 @@ const forgotPassword = catchAsync(async (req: Request, res: Response, next: Next
     const user = await UserModel.findOne({ email: data.email.toLowerCase() });
 
     if (!user) {
-      return res.status(400).json(
-        createResponse(false, null, {
-          code: 400,
+      code = 400;
+      return res.status(code).json(
+        createResponse(code, null, {
           message: 'Invalid credentials',
           fields: { email: 'This email does not correspond to any user' },
         })
@@ -104,9 +107,9 @@ const forgotPassword = catchAsync(async (req: Request, res: Response, next: Next
     }
 
     if (user.status === 'inactive') {
-      return res.status(403).json(
-        createResponse(false, null, {
-          code: 403,
+      code = 403;
+      return res.status(code).json(
+        createResponse(code, null, {
           message: "You can't do any action because your user is inactive",
         })
       );
@@ -149,10 +152,10 @@ const forgotPassword = catchAsync(async (req: Request, res: Response, next: Next
     const responseMailer = await send(mailData);
 
     return res
-      .status(200)
+      .status(code)
       .json(
         createResponse(
-          true,
+          code,
           { message: 'Link has been sent to your email, please check your inbox.' },
           null
         )
@@ -166,6 +169,7 @@ const forgotPassword = catchAsync(async (req: Request, res: Response, next: Next
 const resetPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = req.body ?? {};
+    let code = 200;
 
     const { error } = validateResetPassword(data);
 
@@ -178,9 +182,9 @@ const resetPassword = catchAsync(async (req: Request, res: Response, next: NextF
     const user = await UserModel.findOne({ _id: data.userId });
 
     if (!user) {
-      return res.status(400).json(
-        createResponse(false, null, {
-          code: 400,
+      code = 400;
+      return res.status(code).json(
+        createResponse(code, null, {
           message: 'Invalid credentials',
           fields: { userId: 'This user Id does not correspond to any user' },
         })
@@ -188,9 +192,9 @@ const resetPassword = catchAsync(async (req: Request, res: Response, next: NextF
     }
 
     if (user.status === 'inactive') {
-      return res.status(403).json(
-        createResponse(false, null, {
-          code: 403,
+      code = 403;
+      return res.status(code).json(
+        createResponse(code, null, {
           message: "You can't do any action because your user is inactive",
         })
       );
@@ -229,8 +233,8 @@ const resetPassword = catchAsync(async (req: Request, res: Response, next: NextF
       await passwordResetToken.deleteOne();
 
       return res
-        .status(200)
-        .json(createResponse(true, { message: 'Password has been changed sucessfully' }, null));
+        .status(code)
+        .json(createResponse(code, { message: 'Password has been changed sucessfully' }, null));
     }
   } catch (err: any) {
     next(err);
@@ -241,18 +245,19 @@ const resetPassword = catchAsync(async (req: Request, res: Response, next: NextF
 const validateResetToken = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = req.params ?? {};
+    let code = 200;
 
     let passwordResetToken = await TokenModel.findOne({ token: data?.token });
     if (!passwordResetToken) {
-      return res.status(403).json(
-        createResponse(false, null, {
-          code: 403,
+      code = 403;
+      return res.status(code).json(
+        createResponse(code, null, {
           message: 'Token is expired or invalid, please request a password reset again',
         })
       );
     }
 
-    return res.status(200).json(createResponse(true, { message: 'Token is valid' }, null));
+    return res.status(code).json(createResponse(code, { message: 'Token is valid' }, null));
   } catch (err: any) {
     next(err);
   }

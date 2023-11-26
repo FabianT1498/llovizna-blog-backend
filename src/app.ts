@@ -10,7 +10,7 @@ dotenv.config();
 
 // ROUTES
 import authRouter from './routes/authRoutes';
-import userRouter from './routes/userRoutes';
+// import userRouter from './routes/userRoutes';
 // import postRouter from './routes/postRoutes';
 
 const app = express();
@@ -20,7 +20,7 @@ configureGlobal(app);
 
 // ROUTES
 app.use('/auth', authRouter);
-app.use('/api/v1/users', userRouter);
+// app.use('/api/v1/users', userRouter);
 // app.use('/api/v1/posts', postRouter);
 
 // ERROR HANDLER MIDDLEWARES
