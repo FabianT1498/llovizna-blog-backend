@@ -10,7 +10,7 @@ dotenv.config();
 
 // ROUTES
 import authRouter from './routes/authRoutes';
-// import userRouter from './routes/userRoutes';
+import userRouter from './routes/userRoutes';
 // import postRouter from './routes/postRoutes';
 
 const app = express();

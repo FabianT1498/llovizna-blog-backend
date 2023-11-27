@@ -33,6 +33,7 @@ import {
 //   });
 
 const createUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  let code = 201
   try {
     // Get user input
     const data: User = req.body ?? {};
@@ -42,9 +43,9 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
         req.user.role === 'admin' &&
         (['superadmin', 'admin'] as UserRole[]).includes(data.role)
       ) {
-        return res.status(403).json(
-          createResponse(false, null, {
-            code: 403,
+        code = 403
+        return res.status(code).json(
+          createResponse(code, null, {
             message: 'You are not allowed to create another admin users',
           })
         );
@@ -77,7 +78,7 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
 
       await newUser.save();
 
-      res.status(201).json(createResponse<User>(true, user, null));
+      res.status(code).json(createResponse<User>(code, user, null));
     }
   } catch (err: any) {
     if (err.name === 'MongoServerError' && err.code === 11000) {
@@ -94,6 +95,7 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
 });
 
 const updateUserRole = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  let code = 201
   try {
     const params = req.params ?? {};
     const data = req.body ?? {};
@@ -108,18 +110,18 @@ const updateUserRole = catchAsync(async (req: Request, res: Response, next: Next
       const user = await UserModel.findById(params.id);
 
       if (!user) {
-        return res.status(404).json(
-          createResponse(false, null, {
-            code: 404,
+        code = 404
+        return res.status(code).json(
+          createResponse(code, null, {
             message: "User doesn't exist",
           })
         );
       }
 
       if (user.id === req.user._id) {
-        return res.status(403).json(
-          createResponse(false, null, {
-            code: 403,
+        code = 403
+        return res.status(code).json(
+          createResponse(code, null, {
             message: 'You cannot update your own user role',
           })
         );
@@ -129,9 +131,9 @@ const updateUserRole = catchAsync(async (req: Request, res: Response, next: Next
         req.user.role === 'admin' &&
         (['superadmin', 'admin'] as UserRole[]).includes(data.role)
       ) {
-        return res.status(403).json(
-          createResponse(false, null, {
-            code: 403,
+        code = 403
+        return res.status(code).json(
+          createResponse(code, null, {
             message: 'You are not allowed to create another admin users',
           })
         );
@@ -145,7 +147,7 @@ const updateUserRole = catchAsync(async (req: Request, res: Response, next: Next
 
       console.log(updatedUser);
 
-      res.status(201).json(createResponse(true, updatedUser, null));
+      res.status(code).json(createResponse(code, updatedUser, null));
     }
   } catch (err: any) {
     next(err);
@@ -153,6 +155,7 @@ const updateUserRole = catchAsync(async (req: Request, res: Response, next: Next
 });
 
 const updateUserStatus = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  let code = 201;
   try {
     const params = req.params ?? {};
     const data = req.body ?? {};
@@ -167,18 +170,18 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response, next: Ne
       const user = await UserModel.findById(params.id);
 
       if (!user) {
-        return res.status(404).json(
-          createResponse(false, null, {
-            code: 404,
+        code = 404
+        return res.status(code).json(
+          createResponse(code, null, {
             message: "User doesn't exist",
           })
         );
       }
 
       if (user.id === req.user._id) {
-        return res.status(403).json(
-          createResponse(false, null, {
-            code: 403,
+        code = 403
+        return res.status(code).json(
+          createResponse(code, null, {
             message: 'You cannot update your own status',
           })
         );
@@ -188,9 +191,9 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response, next: Ne
         req.user.role === 'admin' &&
         (['superadmin', 'admin'] as UserRole[]).includes(user.role)
       ) {
-        return res.status(403).json(
-          createResponse(false, null, {
-            code: 403,
+        code = 403
+        return res.status(code).json(
+          createResponse(code, null, {
             message: 'You are not allowed to update the status of another admin.',
           })
         );
@@ -206,7 +209,7 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response, next: Ne
 
       console.log(updatedUser);
 
-      res.status(201).json(createResponse(true, updatedUser, null));
+      res.status(code).json(createResponse(code, updatedUser, null));
     }
   } catch (err: any) {
     next(err);
@@ -214,6 +217,7 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response, next: Ne
 });
 
 const updateUserProfile = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  let code = 201
   try {
     // Get user input
     const data: User = req.body ?? {};
@@ -262,7 +266,7 @@ const updateUserProfile = catchAsync(async (req: Request, res: Response, next: N
 
       await UserModel.findByIdAndUpdate(req.user._id, user, { new: true });
 
-      res.status(201).json(createResponse<User>(true, user, null));
+      res.status(code).json(createResponse<User>(code, user, null));
     }
   } catch (err: any) {
     next(err);
@@ -271,6 +275,7 @@ const updateUserProfile = catchAsync(async (req: Request, res: Response, next: N
 
 const getUser = catchAsync(async (req: Request, res: Response) => {
   // Our register logic starts here
+  let code = 200
   try {
     // Get user input
     const data = req.params ?? {};
@@ -278,13 +283,15 @@ const getUser = catchAsync(async (req: Request, res: Response) => {
     const { error, value } = validateGetUser(data);
 
     if (error) {
-      return res.status(400).send(error.details);
+      code = 400
+      return res.status(code).send(error.details);
     }
 
     const user = await UserModel.findById(data.id);
-    res.status(200).json(user);
+    res.status(code).json(user);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    code = 500
+    res.status(code).json({ error: err.message });
   }
 });
 
@@ -378,6 +385,7 @@ const getUser = catchAsync(async (req: Request, res: Response) => {
 // };
 
 const getUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  let code = 201
   try {
     const params = req.query;
 
@@ -456,7 +464,7 @@ const getUsers = catchAsync(async (req: Request, res: Response, next: NextFuncti
 
       let result = await paginate(query, pageValidated, pageSizeValidated);
 
-      res.status(201).json(createResponse(true, result, null));
+      res.status(code).json(createResponse(code, result, null));
     }
   } catch (err: any) {
     console.log(err);

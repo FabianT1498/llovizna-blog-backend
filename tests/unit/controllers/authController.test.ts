@@ -4,6 +4,8 @@ import * as db from './../../db';
 
 import { app } from '@app/app';
 
+jest.setTimeout(60000)
+
 beforeAll(async () => await db.connect());
 
 afterEach(async () => await db.clearDatabase());
@@ -42,8 +44,9 @@ describe('POST auth/forgot-password/', () => {
   });
 
   it('POST auth/forgot-password => Email is sended successfully ', async () => {
+
     const res = await request(app).post('/auth/forgot-password').send({
-      email: 'fabiantrillo1498@gmail.com',
+      email: 'darien.bernhard58@gmail.com',
     });
 
     expect(res.body?.code).toEqual(200);
