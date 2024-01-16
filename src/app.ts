@@ -20,7 +20,7 @@ configureGlobal(app);
 
 // ROUTES
 app.use('/auth', authRouter);
-// app.use('/api/v1/users', userRouter);
+app.use('/api/v1/users', userRouter);
 // app.use('/api/v1/posts', postRouter);
 
 // ERROR HANDLER MIDDLEWARES

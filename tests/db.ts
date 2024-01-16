@@ -42,4 +42,6 @@ const clearDatabase = async () => {
   }
 };
 
+
+
 export { connect, closeDatabase, clearDatabase };

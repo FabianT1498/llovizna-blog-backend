@@ -33,7 +33,7 @@ import {
 //   });
 
 const createUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  let code = 201
+  let code = 201;
   try {
     // Get user input
     const data: User = req.body ?? {};
@@ -43,7 +43,7 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
         req.user.role === 'admin' &&
         (['superadmin', 'admin'] as UserRole[]).includes(data.role)
       ) {
-        code = 403
+        code = 403;
         return res.status(code).json(
           createResponse(code, null, {
             message: 'You are not allowed to create another admin users',
@@ -71,7 +71,7 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
         ...data,
         picturePath: fileUrl,
         password: encryptedPassword,
-        status: 'active'
+        status: 'active',
       };
 
       const newUser = new UserModel(user);
@@ -95,7 +95,7 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
 });
 
 const updateUserRole = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  let code = 201
+  let code = 201;
   try {
     const params = req.params ?? {};
     const data = req.body ?? {};
@@ -110,7 +110,7 @@ const updateUserRole = catchAsync(async (req: Request, res: Response, next: Next
       const user = await UserModel.findById(params.id);
 
       if (!user) {
-        code = 404
+        code = 404;
         return res.status(code).json(
           createResponse(code, null, {
             message: "User doesn't exist",
@@ -119,7 +119,7 @@ const updateUserRole = catchAsync(async (req: Request, res: Response, next: Next
       }
 
       if (user.id === req.user._id) {
-        code = 403
+        code = 403;
         return res.status(code).json(
           createResponse(code, null, {
             message: 'You cannot update your own user role',
@@ -131,7 +131,7 @@ const updateUserRole = catchAsync(async (req: Request, res: Response, next: Next
         req.user.role === 'admin' &&
         (['superadmin', 'admin'] as UserRole[]).includes(data.role)
       ) {
-        code = 403
+        code = 403;
         return res.status(code).json(
           createResponse(code, null, {
             message: 'You are not allowed to create another admin users',
@@ -170,7 +170,7 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response, next: Ne
       const user = await UserModel.findById(params.id);
 
       if (!user) {
-        code = 404
+        code = 404;
         return res.status(code).json(
           createResponse(code, null, {
             message: "User doesn't exist",
@@ -179,7 +179,7 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response, next: Ne
       }
 
       if (user.id === req.user._id) {
-        code = 403
+        code = 403;
         return res.status(code).json(
           createResponse(code, null, {
             message: 'You cannot update your own status',
@@ -191,7 +191,7 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response, next: Ne
         req.user.role === 'admin' &&
         (['superadmin', 'admin'] as UserRole[]).includes(user.role)
       ) {
-        code = 403
+        code = 403;
         return res.status(code).json(
           createResponse(code, null, {
             message: 'You are not allowed to update the status of another admin.',
@@ -217,7 +217,7 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response, next: Ne
 });
 
 const updateUserProfile = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  let code = 201
+  let code = 201;
   try {
     // Get user input
     const data: User = req.body ?? {};
@@ -275,7 +275,7 @@ const updateUserProfile = catchAsync(async (req: Request, res: Response, next: N
 
 const getUser = catchAsync(async (req: Request, res: Response) => {
   // Our register logic starts here
-  let code = 200
+  let code = 200;
   try {
     // Get user input
     const data = req.params ?? {};
@@ -283,14 +283,14 @@ const getUser = catchAsync(async (req: Request, res: Response) => {
     const { error, value } = validateGetUser(data);
 
     if (error) {
-      code = 400
+      code = 400;
       return res.status(code).send(error.details);
     }
 
     const user = await UserModel.findById(data.id);
     res.status(code).json(user);
   } catch (err: any) {
-    code = 500
+    code = 500;
     res.status(code).json({ error: err.message });
   }
 });
@@ -385,7 +385,7 @@ const getUser = catchAsync(async (req: Request, res: Response) => {
 // };
 
 const getUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  let code = 201
+  let code = 201;
   try {
     const params = req.query;
 
